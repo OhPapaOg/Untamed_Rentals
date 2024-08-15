@@ -37,6 +37,16 @@ function SetupStoragePrompt(promptText, key)
     return prompt
 end
 
+function GetItemLabelByName(type, itemName)
+    for _, item in ipairs(Config.AllowedItems[type]) do
+        if item.name == itemName then
+            return item.label
+        end
+    end
+    return itemName -- Fallback to name if label not found
+end
+
+
 Citizen.CreateThread(function()
     while true do
         Citizen.Wait(0)
@@ -163,7 +173,8 @@ AddEventHandler('showStoredItems', function(netId, items)
 
     local elements = {}
     for item, count in pairs(items) do
-        table.insert(elements, {label = item .. " (" .. count .. ")", value = item, count = count})
+        local itemLabel = GetItemLabelByName(rentedWagons[netId].type, item)
+        table.insert(elements, {label = itemLabel .. " (" .. count .. ")", value = item, count = count})
     end
 
     Menu.Open("default", GetCurrentResourceName(), "stored_items_menu", {
@@ -338,3 +349,4 @@ AddEventHandler('onResourceStop', function(resourceName)
         returnPrompts = {}
     end
 end)
+
