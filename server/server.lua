@@ -13,6 +13,16 @@ local propSets = {
     ore = "pg_delivery_Coal01x"
 }
 
+-- Function to get label by item name
+function GetItemLabelByName(type, itemName)
+    for _, item in ipairs(Config.AllowedItems[type]) do
+        if item.name == itemName then
+            return item.label
+        end
+    end
+    return itemName -- Fallback to name if label not found
+end
+
 RegisterServerEvent('rentWagon')
 AddEventHandler('rentWagon', function(wagon, price, spawnLocation, type, items, maxItems)
     local _source = source
@@ -61,7 +71,8 @@ AddEventHandler('storeItems', function(netId, amount, itemType)
     if wagonStorage[vehicle][itemType] + amount <= maxItems then
         wagonStorage[vehicle][itemType] = wagonStorage[vehicle][itemType] + amount
         VorpInv.subItem(_source, itemType, amount)
-        local message = Config.Locale.storeSuccess:gsub("{amount}", amount):gsub("{itemType}", itemType)
+        local itemLabel = GetItemLabelByName(rentedWagons[netId].type, itemType)
+        local message = Config.Locale.storeSuccess:gsub("{amount}", amount):gsub("{itemType}", itemLabel)
         TriggerClientEvent('vorp:TipBottom', _source, message, 4000)
         UpdateWagonPropSet(_source, vehicle)
     else
@@ -84,7 +95,8 @@ AddEventHandler('retrieveItems', function(netId, amount, selectedItem)
             if wagonStorage[vehicle][selectedItem] >= amount then
                 wagonStorage[vehicle][selectedItem] = wagonStorage[vehicle][selectedItem] - amount
                 VorpInv.addItem(_source, selectedItem, amount)
-                local message = Config.Locale.retrieveSuccess:gsub("{amount}", amount):gsub("{itemType}", selectedItem)
+                local itemLabel = GetItemLabelByName(rentedWagons[netId].type, selectedItem)
+                local message = Config.Locale.retrieveSuccess:gsub("{amount}", amount):gsub("{itemType}", itemLabel)
                 TriggerClientEvent('vorp:TipBottom', _source, message, 4000)
                 UpdateWagonPropSet(_source, vehicle)
                 return
@@ -113,17 +125,12 @@ AddEventHandler('returnWagon', function(netId, refund)
     local vehicle = NetworkGetEntityFromNetworkId(netId)
     local Character = VorpCore.getUser(_source).getUsedCharacter
 
-  --  print("Attempting to return wagon:", vehicle)
-   -- print("Player source:", _source)
-   -- print("Rented wagons:", rentedWagons[netId])
-
     if DoesEntityExist(vehicle) and rentedWagons[netId] and rentedWagons[netId].player == _source then
         rentedWagons[netId] = nil
         Character.addCurrency(0, refund)
         TriggerClientEvent('removeWagon', _source, netId)
         TriggerClientEvent('vorp:TipBottom', _source, Config.Locale.returnSuccess:gsub("{refund}", refund), 4000)
     else
-       -- print('Invalid wagon return attempt:', 'player:', _source, 'vehicle:', vehicle, 'rentedWagons:', rentedWagons[netId])
         TriggerClientEvent('vorp:TipBottom', _source, Config.Locale.invalidVehicle, 4000)
     end
 end)
@@ -170,7 +177,6 @@ RegisterServerEvent('registerRentedWagon')
 AddEventHandler('registerRentedWagon', function(vehicleNetId, type)
     local _source = source
     rentedWagons[vehicleNetId] = {player = _source, type = type}
-   -- print("Wagon registered with NetID:", vehicleNetId)
 end)
 
 AddEventHandler('playerDropped', function(reason)
