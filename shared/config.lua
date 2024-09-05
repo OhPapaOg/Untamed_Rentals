@@ -6,14 +6,14 @@ Config.Locations = {
 }
 
 Config.ReturnLocations = {
-    {promptPosition = vector3(-241.17, 744.15, 116.43), refund = 25}, -- Emerald Ranch
-    {promptPosition = vector3(1523.11, 458.54, 89.84), refund = 25} -- Valentine
+    {promptPosition = vector3(-241.17, 744.15, 116.43)}, -- Emerald Ranch
+    {promptPosition = vector3(1523.11, 458.54, 89.84)} -- Valentine
 }
 
 Config.Wagons = { -- You can add more commute but only one wood or ore wagon. Don't change Wood and Ore wagon models, it will cause issues. 
-    {label = "Small Wagon", model = "cart02", price = 25, type = "commute"},
-    {label = "Wood Wagon", model = "logwagon", price = 100, type = "wood", maxItems = 50},
-    {label = "Ore Wagon", model = "coal_wagon", price = 100, type = "ore", maxItems = 50}
+        {label = "Small Wagon", model = "cart02", price = 25, returnPrice = 10, type = "commute"},
+    {label = "Wood Wagon", model = "logwagon", price = 100, returnPrice = 50, type = "wood", maxItems = 50},
+    {label = "Ore Wagon", model = "coal_wagon", price = 100, returnPrice = 60, type = "ore", maxItems = 50}
 }
 
 Config.AllowedItems = {
