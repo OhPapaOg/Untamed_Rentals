@@ -46,7 +46,6 @@ function GetItemLabelByName(type, itemName)
     return itemName -- Fallback to name if label not found
 end
 
-
 Citizen.CreateThread(function()
     while true do
         Citizen.Wait(0)
@@ -87,7 +86,7 @@ Citizen.CreateThread(function()
                     PromptSetEnabled(returnPrompts[location], true)
                     PromptSetVisible(returnPrompts[location], true)
                     if PromptHasHoldModeCompleted(returnPrompts[location]) then
-                        ReturnWagon(location.refund)
+                        ReturnWagon(vehicleNetId)
                     end
                 else
                     if returnPrompts[location] then
@@ -224,7 +223,8 @@ function OpenWagonMenu(spawnLocation)
             spawnLocation = spawnLocation,
             type = wagon.type,
             items = wagon.items or {},
-            maxItems = wagon.maxItems or 0
+            maxItems = wagon.maxItems or 0,
+            refund = wagon.returnPrice
         })
     end
 
@@ -240,36 +240,33 @@ function OpenWagonMenu(spawnLocation)
         local type = data.current.type
         local items = data.current.items
         local maxItems = data.current.maxItems
-        TriggerServerEvent('rentWagon', selectedWagon, price, spawnLocation, type, items, maxItems)
+        local refund = data.current.refund
+        TriggerServerEvent('rentWagon', selectedWagon, price, spawnLocation, type, items, maxItems, refund)
         menu.close()
     end, function(data, menu)
         menu.close()
     end)
 end
 
-function ReturnWagon(refund)
-    local playerPed = PlayerPedId()
-    local vehicle = GetVehiclePedIsIn(playerPed, false)
-    if DoesEntityExist(vehicle) then
-        local vehicleNetId = VehToNet(vehicle)
-        if rentedWagons[vehicleNetId] and rentedWagons[vehicleNetId].player == playerPed then
-            TriggerServerEvent('returnWagon', vehicleNetId, refund)
-            rentedWagons[vehicleNetId] = nil
-            if storagePrompts[vehicleNetId] then
-                PromptSetEnabled(storagePrompts[vehicleNetId].store, false)
-                PromptSetVisible(storagePrompts[vehicleNetId].store, false)
-                PromptSetEnabled(storagePrompts[vehicleNetId].unload, false)
-                PromptSetVisible(storagePrompts[vehicleNetId].unload, false)
-                storagePrompts[vehicleNetId] = nil
-            end
-        else
-            TriggerEvent('vorp:TipBottom', Config.Locale.invalidVehicle, 4000)
+function ReturnWagon(vehicleNetId)
+    if rentedWagons[vehicleNetId] then
+        local refund = rentedWagons[vehicleNetId].refund
+        TriggerServerEvent('returnWagon', vehicleNetId, refund)
+        rentedWagons[vehicleNetId] = nil
+        if storagePrompts[vehicleNetId] then
+            PromptSetEnabled(storagePrompts[vehicleNetId].store, false)
+            PromptSetVisible(storagePrompts[vehicleNetId].store, false)
+            PromptSetEnabled(storagePrompts[vehicleNetId].unload, false)
+            PromptSetVisible(storagePrompts[vehicleNetId].unload, false)
+            storagePrompts[vehicleNetId] = nil
         end
+    else
+        TriggerEvent('vorp:TipBottom', Config.Locale.invalidVehicle, 4000)
     end
 end
 
 RegisterNetEvent('spawnWagon')
-AddEventHandler('spawnWagon', function(wagon, spawnLocation, type, items, maxItems)
+AddEventHandler('spawnWagon', function(wagon, spawnLocation, type, items, maxItems, refund)
     local model = GetHashKey(wagon)
     RequestModel(model)
 
@@ -280,7 +277,7 @@ AddEventHandler('spawnWagon', function(wagon, spawnLocation, type, items, maxIte
     local vehicle = CreateVehicle(model, spawnLocation.x, spawnLocation.y, spawnLocation.z, spawnLocation.w, true, false)
     SetPedIntoVehicle(PlayerPedId(), vehicle, -1)
     local vehicleNetId = VehToNet(vehicle)
-    rentedWagons[vehicleNetId] = {model = wagon, player = PlayerPedId(), type = type, items = items, maxItems = maxItems}
+    rentedWagons[vehicleNetId] = {model = wagon, player = PlayerPedId(), type = type, items = items, maxItems = maxItems, refund = refund}
 
     -- Notify the server about the spawned wagon
     TriggerServerEvent('registerRentedWagon', vehicleNetId, type)
@@ -349,4 +346,3 @@ AddEventHandler('onResourceStop', function(resourceName)
         returnPrompts = {}
     end
 end)
-
