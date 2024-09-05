@@ -24,13 +24,13 @@ function GetItemLabelByName(type, itemName)
 end
 
 RegisterServerEvent('rentWagon')
-AddEventHandler('rentWagon', function(wagon, price, spawnLocation, type, items, maxItems)
+AddEventHandler('rentWagon', function(wagon, price, spawnLocation, type, items, maxItems, refund)
     local _source = source
     local Character = VorpCore.getUser(_source).getUsedCharacter
 
     if Character.money >= price then
         Character.removeCurrency(0, price)
-        TriggerClientEvent('spawnWagon', _source, wagon, spawnLocation, type, items, maxItems)
+        TriggerClientEvent('spawnWagon', _source, wagon, spawnLocation, type, items, maxItems, refund)
         TriggerClientEvent('vorp:TipBottom', _source, Config.Locale.rentSuccess, 4000)
     else
         TriggerClientEvent('vorp:TipBottom', _source, Config.Locale.notEnoughMoney, 4000)
